@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { Workout, WorkoutInput } from "../types/index";
 
 const STORAGE_KEY = "t-fitness-workouts";
@@ -9,8 +9,9 @@ const STORAGE_KEY = "t-fitness-workouts";
 export function useWorkouts() {
   const [workouts, setWorkouts] = useState<Workout[]>([]);
   const [loaded, setLoaded] = useState(false);
+  const skipFirstSave = useRef(true);
 
-  // Load saved workouts from the browser.
+  // Load saved workouts before allowing storage writes.
   useEffect(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
@@ -29,9 +30,14 @@ export function useWorkouts() {
     }
   }, []);
 
-  // Save workouts after loading is complete.
+  // Do not overwrite saved data during initial loading.
   useEffect(() => {
     if (!loaded) return;
+
+    if (skipFirstSave.current) {
+      skipFirstSave.current = false;
+      return;
+    }
 
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(workouts));
